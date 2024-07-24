@@ -1,24 +1,30 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Modal, Button } from "react-bootstrap";
-import { DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
+import { DotLottieReact } from "@lottiefiles/dotlottie-react";
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
 import fireworksAnimation from "./assets/fireworks.lottie";
 import achievementSound from "./assets/mixkit-achievement-bell-600.mp3";
+
+interface DotLottieInstance {
+  addEventListener: (event: string, callback: () => void) => void;
+  removeEventListener: (event: string, callback: () => void) => void;
+  stop: () => void;
+}
 
 const PrizeReveal: React.FC = () => {
   const [showModal, setShowModal] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
   const [isMuted, setIsMuted] = useState(true);
+  const [dotLottie, setDotLottie] = useState<DotLottieInstance | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const soundRef = useRef<Howl | null>(null);
-  const lottieRef = useRef<DotLottiePlayer>(null);
 
   useEffect(() => {
     soundRef.current = new Howl({
-      src: [achievementSoaund],
+      src: [achievementSound],
       mute: isMuted,
     });
   }, [isMuted]);
@@ -32,10 +38,10 @@ const PrizeReveal: React.FC = () => {
     if (soundRef.current) {
       soundRef.current.stop();
     }
-    if (lottieRef.current) {
-      lottieRef.current.stop();
+    if (dotLottie) {
+      dotLottie.stop();
     }
-  }, []);
+  }, [dotLottie]);
 
   const handleClaim = () => {
     resetState();
@@ -48,17 +54,28 @@ const PrizeReveal: React.FC = () => {
     }
   };
 
-  const handleLottieEvent = useCallback(
-    (event: PlayerEvents) => {
-      if (event === PlayerEvents.Play) {
-        setIsFlipped(true);
-        if (!isMuted && soundRef.current) {
-          soundRef.current.play();
-        }
+  const onPlay = useCallback(() => {
+    setIsFlipped(true);
+    if (!isMuted && soundRef.current) {
+      soundRef.current.play();
+    }
+  }, [isMuted]);
+
+  useEffect(() => {
+    if (dotLottie) {
+      dotLottie.addEventListener("play", onPlay);
+    }
+
+    return () => {
+      if (dotLottie) {
+        dotLottie.removeEventListener("play", onPlay);
       }
-    },
-    [isMuted],
-  );
+    };
+  }, [dotLottie, onPlay]);
+
+  const dotLottieRefCallback = useCallback((instance: DotLottieInstance | null) => {
+    setDotLottie(instance);
+  }, []);
 
   return (
     <div className="container">
@@ -103,20 +120,14 @@ const PrizeReveal: React.FC = () => {
 
       {showFireworks && (
         <div id="fireworks-container">
-          <DotLottiePlayer
-            ref={lottieRef}
+          <DotLottieReact
             src={fireworksAnimation}
             autoplay
             loop={false}
-            onEvent={handleLottieEvent}
+            dotLottieRefCallback={dotLottieRefCallback}
             style={{
-              position: "fixed",
-              top: 0,
-              left: 0,
               width: "100%",
               height: "100%",
-              pointerEvents: "none",
-              zIndex: 1051,
             }}
           />
         </div>
