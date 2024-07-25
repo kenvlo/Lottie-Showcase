@@ -3,8 +3,8 @@ import { Modal, Button } from "react-bootstrap";
 import { DotLottiePlayer, PlayerEvents, DotLottieCommonPlayer } from "@dotlottie/react-player";
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
-import fireworksAnimation from "./assets/fireworks.lottie";
-import achievementSound from "./assets/mixkit-achievement-bell-600.mp3";
+import fireworksAnimation from "./assets/lottie/fireworks.lottie";
+import achievementSound from "./assets/sound/mixkit-achievement-bell-600.mp3";
 
 interface PrizeRevealProps {
   onBack: () => void;
