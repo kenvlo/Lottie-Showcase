@@ -1,6 +1,8 @@
 import React, { useState } from 'react';
 import PrizeReveal from './PrizeReveal';
 import Menu from './Menu';
+import LottieExport from './LottieExport';
+import GachaMachine from './GachaMachine';
 
 const App: React.FC = () => {
   const [currentFeature, setCurrentFeature] = useState('/');
@@ -18,20 +20,19 @@ const App: React.FC = () => {
         <PrizeReveal onBack={() => handleFeatureChange('/')} />
       )}
       {currentFeature === '/gacha-machine' && (
-        <div>
-          <h2>Gacha Machine Content</h2>
-          <button className="styled-button" onClick={() => handleFeatureChange('/')}>Back to Menu</button>
-        </div>
+        <GachaMachine onBack={() => handleFeatureChange('/')} />
       )}
-
+      {currentFeature === '/lottie-export' && (
+        <LottieExport onBack={() => handleFeatureChange('/')} />
+      )}
       <style>{`
         .App {
           display: flex;
           justify-content: center;
           align-items: center;
           min-height: 100vh;
+          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
-
         .styled-button {
           background-color: #4CAF50;
           border: none;
@@ -46,7 +47,6 @@ const App: React.FC = () => {
           border-radius: 8px;
           transition: background-color 0.3s;
         }
-
         .styled-button:hover {
           background-color: #45a049;
         }
