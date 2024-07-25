@@ -6,7 +6,11 @@ import { Volume2, VolumeX } from "lucide-react";
 import fireworksAnimation from "./assets/fireworks.lottie";
 import achievementSound from "./assets/mixkit-achievement-bell-600.mp3";
 
-const PrizeReveal: React.FC = () => {
+interface PrizeRevealProps {
+  onBack: () => void;
+}
+
+const PrizeReveal: React.FC<PrizeRevealProps> = ({ onBack }) => {
   const [showModal, setShowModal] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
@@ -64,10 +68,10 @@ const PrizeReveal: React.FC = () => {
     <div className="container">
       <div className="text-center">
         <h2 className="text-white mb-4">You've got a surprise!</h2>
-        <Button onClick={handleReveal} className="me-2">
+        <Button onClick={handleReveal} className="styled-button me-2">
           Reveal Prize
         </Button>
-        <Button onClick={toggleMute} variant="outline-light">
+        <Button onClick={toggleMute} className="styled-button">
           {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
         </Button>
       </div>
@@ -92,7 +96,7 @@ const PrizeReveal: React.FC = () => {
               <div className="card__face card__face--front">
                 <h2>Congratulations!</h2>
                 <p>You've won a special prize!</p>
-                <Button variant="success" onClick={handleClaim}>
+                <Button variant="success" onClick={handleClaim} className="styled-button">
                   Claim Prize
                 </Button>
               </div>
@@ -122,13 +126,38 @@ const PrizeReveal: React.FC = () => {
         </div>
       )}
 
+      <button onClick={onBack} className="styled-button back-button">Back to Menu</button>
+
       <style>{`
-        body {
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-          min-height: 100vh;
+        .container {
           display: flex;
+          flex-direction: column;
           align-items: center;
           justify-content: center;
+          min-height: 100vh;
+        }
+
+        .styled-button {
+          background-color: #4CAF50;
+          border: none;
+          color: white;
+          padding: 15px 32px;
+          text-align: center;
+          text-decoration: none;
+          display: inline-block;
+          font-size: 16px;
+          margin: 4px 2px;
+          cursor: pointer;
+          border-radius: 8px;
+          transition: background-color 0.3s;
+        }
+
+        .styled-button:hover {
+          background-color: #45a049;
+        }
+
+        .back-button {
+          margin-top: 20px;
         }
 
         .modal-backdrop {
