@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Modal, Button } from "react-bootstrap";
-import { DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
+import { DotLottiePlayer, PlayerEvents, DotLottieCommonPlayer } from "@dotlottie/react-player";
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
 import fireworksAnimation from "./assets/fireworks.lottie";
@@ -14,11 +14,11 @@ const PrizeReveal: React.FC = () => {
 
   const cardRef = useRef<HTMLDivElement>(null);
   const soundRef = useRef<Howl | null>(null);
-  const lottieRef = useRef<DotLottiePlayer>(null);
+  const lottieRef = useRef<DotLottieCommonPlayer>(null);
 
   useEffect(() => {
     soundRef.current = new Howl({
-      src: [achievementSoaund],
+      src: [achievementSound],
       mute: isMuted,
     });
   }, [isMuted]);
@@ -49,7 +49,7 @@ const PrizeReveal: React.FC = () => {
   };
 
   const handleLottieEvent = useCallback(
-    (event: PlayerEvents) => {
+    <T extends PlayerEvents>(event: T) => {
       if (event === PlayerEvents.Play) {
         setIsFlipped(true);
         if (!isMuted && soundRef.current) {
@@ -57,7 +57,7 @@ const PrizeReveal: React.FC = () => {
         }
       }
     },
-    [isMuted],
+    [isMuted]
   );
 
   return (
