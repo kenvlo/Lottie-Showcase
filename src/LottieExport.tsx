@@ -45,8 +45,8 @@ const LottieExport: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             const img = new Image();
             img.onload = () => {
                 const canvas = document.createElement('canvas');
-                canvas.width = anim.animationData.w;
-                canvas.height = anim.animationData.h;
+                canvas.width = lottieData.w;
+                canvas.height = lottieData.h;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
                     ctx.drawImage(img, 0, 0);
