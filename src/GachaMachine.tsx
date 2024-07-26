@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { DotLottieCommonPlayer, DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
 import { Howl } from "howler";
 import { Button, Modal } from "react-bootstrap";
@@ -14,9 +14,11 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showButton, setShowButton] = useState(true);
     const [isLoading, setIsLoading] = useState(true);
     const [isMuted, setIsMuted] = useState(false);
+    const [isLottieReady, setIsLottieReady] = useState(false);
     const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
     const soundRef = useRef<Howl | null>(null);
     const soundPlayedRef = useRef<boolean>(false);
+    const containerRef = useRef<HTMLDivElement>(null);
 
     useEffect(() => {
         const img = new Image();
@@ -44,16 +46,39 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     }, [isMuted]);
 
+    const getObserver = useCallback(() => {
+        return new IntersectionObserver((entries) => {
+            entries.forEach((entry) => {
+                if (entry.isIntersecting && showLottie && isLottieReady) {
+                    lottieRef.current?.play();
+                } else {
+                    lottieRef.current?.pause();
+                }
+            });
+        });
+    }, [showLottie, isLottieReady]);
+
+    useEffect(() => {
+        const observer = getObserver();
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
+        return () => {
+            observer.disconnect();
+        };
+    }, [getObserver]);
+
     const handleStart = () => {
         setShowButton(false);
         setShowLottie(true);
         soundPlayedRef.current = false;
-        if (lottieRef.current) {
-            lottieRef.current.play();
-        }
     };
 
     const handleLottieEvent = (event: PlayerEvents) => {
+        if (event === PlayerEvents.Ready) {
+            setIsLottieReady(true);
+        }
         if (event === PlayerEvents.Play) {
             setTimeout(() => setShowStatic(false), 50);
         }
@@ -91,7 +116,7 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <div className="gacha-machine">
             <h2>Gacha Machine</h2>
 
-            <div className="gacha-container">
+            <div className="gacha-container" ref={containerRef}>
                 {isLoading ? (
                     <div className="loading">Loading...</div>
                 ) : (
