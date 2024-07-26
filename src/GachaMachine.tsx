@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import React, { useState, useEffect, useRef, useCallback, useDeferredValue, useTransition } from 'react';
 import { DotLottieCommonPlayer, DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
 import { Howl } from "howler";
 import { Button, Modal } from "react-bootstrap";
@@ -15,6 +15,8 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isMuted, setIsMuted] = useState(false);
     const [isLottieReady, setIsLottieReady] = useState(false);
+    const deferredShowLottie = useDeferredValue(showLottie);
+    const [isPending, startTransition] = useTransition();
     const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
     const soundRef = useRef<Howl | null>(null);
     const soundPlayedRef = useRef<boolean>(false);
@@ -49,14 +51,14 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const getObserver = useCallback(() => {
         return new IntersectionObserver((entries) => {
             entries.forEach((entry) => {
-                if (entry.isIntersecting && showLottie && isLottieReady) {
+                if (entry.isIntersecting && deferredShowLottie && isLottieReady) {
                     lottieRef.current?.play();
                 } else {
                     lottieRef.current?.pause();
                 }
             });
         });
-    }, [showLottie, isLottieReady]);
+    }, [deferredShowLottie, isLottieReady]);
 
     useEffect(() => {
         const observer = getObserver();
@@ -71,7 +73,9 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleStart = () => {
         setShowButton(false);
-        setShowLottie(true);
+        startTransition(() => {
+            setShowLottie(true);
+        });
         soundPlayedRef.current = false;
     };
 
@@ -99,9 +103,11 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleClaim = () => {
         setShowModal(false);
-        setShowLottie(false);
-        setShowStatic(true);
-        setShowButton(true);
+        startTransition(() => {
+            setShowLottie(false);
+            setShowStatic(true);
+            setShowButton(true);
+        });
         soundPlayedRef.current = false;
         if (lottieRef.current) {
             lottieRef.current.stop();
@@ -133,7 +139,7 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             autoplay={false}
                             loop={false}
                             onEvent={handleLottieEvent}
-                            className={`lottie-player ${showLottie ? 'visible' : ''}`}
+                            className={`lottie-player ${deferredShowLottie ? 'visible' : ''}`}
                         />
                     </>
                 )}
@@ -143,7 +149,7 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 <Button
                     onClick={handleStart}
                     className={`styled-button mt-3 ${showButton ? '' : 'invisible'}`}
-                    disabled={isLoading}
+                    disabled={isLoading || isPending}
                 >
                     Get with 100 coins
                 </Button>
