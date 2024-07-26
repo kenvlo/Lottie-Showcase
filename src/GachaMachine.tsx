@@ -30,7 +30,8 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleLottieEvent = (event: PlayerEvents) => {
         if (event === PlayerEvents.Play) {
-            setShowStatic(false);
+            // Delay hiding the static image slightly to ensure smooth transition
+            setTimeout(() => setShowStatic(false), 50);
         }
         if (event === PlayerEvents.Frame && lottieRef.current) {
             const animationInstance = lottieRef.current.getAnimationInstance();
@@ -61,13 +62,11 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             <h2>Gacha Machine</h2>
 
             <div className="gacha-container">
-                {showStatic && (
-                    <img
-                        src={gachaMachineFirstFrame}
-                        alt="Gacha Machine"
-                        className="gacha-image"
-                    />
-                )}
+                <img
+                    src={gachaMachineFirstFrame}
+                    alt="Gacha Machine"
+                    className={`gacha-image ${showStatic ? 'visible' : ''}`}
+                />
 
                 <DotLottiePlayer
                     ref={lottieRef}
@@ -75,23 +74,18 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     autoplay={false}
                     loop={false}
                     onEvent={handleLottieEvent}
-                    style={{
-                        width: '100%',
-                        height: '100%',
-                        position: 'absolute',
-                        top: 0,
-                        left: 0,
-                        opacity: showLottie ? 1 : 0,
-                        transition: 'opacity 0.3s ease-in-out',
-                    }}
+                    className={`lottie-player ${showLottie ? 'visible' : ''}`}
                 />
             </div>
 
-            {showButton && (
-                <Button onClick={handleStart} className="styled-button mt-3">
+            <div className="button-container">
+                <Button
+                    onClick={handleStart}
+                    className={`styled-button mt-3 ${showButton ? '' : 'invisible'}`}
+                >
                     Get with 100 coins
                 </Button>
-            )}
+            </div>
 
             <Modal
                 show={showModal}
@@ -139,13 +133,23 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     overflow: hidden;
                     position: relative;
                 }
-                .gacha-image {
+                .gacha-image, .lottie-player {
                     width: 100%;
                     height: 100%;
                     object-fit: contain;
                     position: absolute;
                     top: 0;
                     left: 0;
+                    opacity: 0;
+                }
+                .gacha-image.visible, .lottie-player.visible {
+                    opacity: 1;
+                }
+                .button-container {
+                    height: 60px;
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
                 }
                 h2 {
                     color: white;
@@ -163,10 +167,14 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     margin: 4px 2px;
                     cursor: pointer;
                     border-radius: 8px;
-                    transition: background-color 0.3s;
+                    transition: background-color 0.3s, opacity 0.3s;
                 }
                 .styled-button:hover {
                     background-color: #45a049;
+                }
+                .styled-button.invisible {
+                    opacity: 0;
+                    pointer-events: none;
                 }
                 .card-container {
                     perspective: 1000px;
