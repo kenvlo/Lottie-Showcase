@@ -8,7 +8,8 @@ const Menu: React.FC<MenuProps> = ({ onFeatureSelect }) => {
     return (
         <nav className="menu">
             <h1>Lottie Showcase Menu</h1>
-            <button className="styled-button" onClick={() => onFeatureSelect('/flip-card')}>Flip Card</button>
+            <button className="styled-button" onClick={() => onFeatureSelect('/flip-card')}>Flip Card - Old Lottie Player (Current Choice)</button>
+            <button className="styled-button" onClick={() => onFeatureSelect('/new-flip-card')}>Flip Card - New Lottie Player</button>
             <button className="styled-button" onClick={() => onFeatureSelect('/gacha-machine')}>Gacha Machine</button>
             <button className="styled-button" onClick={() => onFeatureSelect('/lottie-export')}>Lottie Export</button>
             <style>{`

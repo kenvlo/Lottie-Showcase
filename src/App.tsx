@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import PrizeReveal from './PrizeReveal';
+import NewPrizeReveal from './NewPrizeReveal';
 import Menu from './Menu';
 import LottieExport from './LottieExport';
 import GachaMachine from './GachaMachine';
@@ -18,6 +19,9 @@ const App: React.FC = () => {
       )}
       {currentFeature === '/flip-card' && (
         <PrizeReveal onBack={() => handleFeatureChange('/')} />
+      )}
+      {currentFeature === '/new-flip-card' && (
+        <NewPrizeReveal onBack={() => handleFeatureChange('/')} />
       )}
       {currentFeature === '/gacha-machine' && (
         <GachaMachine onBack={() => handleFeatureChange('/')} />
