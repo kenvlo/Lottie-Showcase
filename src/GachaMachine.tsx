@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { DotLottieCommonPlayer, DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
 import { Howl } from "howler";
 import { Button, Modal } from "react-bootstrap";
+import { Volume2, VolumeX } from "lucide-react";
 import achievementSound from "./assets/sound/mixkit-achievement-bell-600.mp3";
 import gachaMachineFirstFrame from "./assets/first_frame_image/gacha_machine_first_frame.jpg";
 import gachaMachineLottie from "./assets/lottie/gacha_machine.lottie";
@@ -11,18 +12,37 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showLottie, setShowLottie] = useState(false);
     const [showModal, setShowModal] = useState(false);
     const [showButton, setShowButton] = useState(true);
+    const [isLoading, setIsLoading] = useState(true);
+    const [isMuted, setIsMuted] = useState(false);
     const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
     const soundRef = useRef<Howl | null>(null);
     const soundPlayedRef = useRef<boolean>(false);
 
     useEffect(() => {
+        const img = new Image();
+        img.src = gachaMachineFirstFrame;
+        img.onload = () => setIsLoading(false);
+
         soundRef.current = new Howl({
             src: [achievementSound],
             onend: () => {
                 soundPlayedRef.current = false;
-            }
+            },
+            mute: isMuted
         });
-    }, []);
+
+        return () => {
+            if (soundRef.current) {
+                soundRef.current.unload();
+            }
+        };
+    }, [isMuted]);
+
+    useEffect(() => {
+        if (soundRef.current) {
+            soundRef.current.mute(isMuted);
+        }
+    }, [isMuted]);
 
     const handleStart = () => {
         setShowButton(false);
@@ -43,7 +63,7 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 const currentFrame = animationInstance.currentFrame;
                 if (currentFrame >= 85 && !soundPlayedRef.current) {
                     setShowModal(true);
-                    if (soundRef.current) {
+                    if (soundRef.current && !isMuted) {
                         soundRef.current.play();
                         soundPlayedRef.current = true;
                     }
@@ -63,35 +83,50 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     };
 
+    const toggleMute = () => {
+        setIsMuted(!isMuted);
+    };
+
     return (
         <div className="gacha-machine">
             <h2>Gacha Machine</h2>
 
             <div className="gacha-container">
-                <img
-                    src={gachaMachineFirstFrame}
-                    alt="Gacha Machine"
-                    className={`gacha-image ${showStatic ? 'visible' : ''}`}
-                />
+                {isLoading ? (
+                    <div className="loading">Loading...</div>
+                ) : (
+                    <>
+                        <img
+                            src={gachaMachineFirstFrame}
+                            alt="Gacha Machine"
+                            className={`gacha-image ${showStatic ? 'visible' : ''}`}
+                        />
 
-                <DotLottiePlayer
-                    ref={lottieRef}
-                    src={gachaMachineLottie}
-                    autoplay={false}
-                    loop={false}
-                    onEvent={handleLottieEvent}
-                    className={`lottie-player ${showLottie ? 'visible' : ''}`}
-                />
+                        <DotLottiePlayer
+                            ref={lottieRef}
+                            src={gachaMachineLottie}
+                            autoplay={false}
+                            loop={false}
+                            onEvent={handleLottieEvent}
+                            className={`lottie-player ${showLottie ? 'visible' : ''}`}
+                        />
+                    </>
+                )}
             </div>
 
             <div className="button-container">
                 <Button
                     onClick={handleStart}
                     className={`styled-button mt-3 ${showButton ? '' : 'invisible'}`}
+                    disabled={isLoading}
                 >
                     Get with 100 coins
                 </Button>
             </div>
+
+            <Button onClick={toggleMute} className="styled-button mute-button">
+                {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
+            </Button>
 
             <Modal
                 show={showModal}
@@ -157,6 +192,10 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     align-items: center;
                     justify-content: center;
                 }
+                .loading {
+                    color: white;
+                    font-size: 18px;
+                }
                 h2 {
                     color: white;
                     margin-bottom: 20px;
@@ -181,6 +220,12 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 .styled-button.invisible {
                     opacity: 0;
                     pointer-events: none;
+                }
+                .mute-button {
+                    position: absolute;
+                    top: -70px;
+                    right: 0;
+                    padding: 10px;
                 }
                 .modal-dialog {
                     width: 300px;
