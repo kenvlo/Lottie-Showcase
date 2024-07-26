@@ -31,7 +31,6 @@ const App: React.FC = () => {
           justify-content: center;
           align-items: center;
           min-height: 100vh;
-          background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
         }
         .styled-button {
           background-color: #4CAF50;
