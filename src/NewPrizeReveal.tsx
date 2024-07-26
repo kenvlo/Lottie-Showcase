@@ -1,6 +1,6 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Modal, Button } from "react-bootstrap";
-import { DotLottieReact } from "@lottiefiles/dotlottie-react";
+import { DotLottieReact, DotLottie } from "@lottiefiles/dotlottie-react";
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
 import fireworksAnimation from "./assets/lottie/fireworks.lottie";
@@ -10,11 +10,7 @@ interface NewPrizeRevealProps {
   onBack: () => void;
 }
 
-interface DotLottieInstance {
-  addEventListener: (event: string, callback: () => void) => void;
-  removeEventListener: (event: string, callback: () => void) => void;
-  stop: () => void;
-}
+type DotLottieInstance = DotLottie;
 
 const NewPrizeReveal: React.FC<NewPrizeRevealProps> = ({ onBack }) => {
   const [showModal, setShowModal] = useState(false);
