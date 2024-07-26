@@ -13,16 +13,21 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showButton, setShowButton] = useState(true);
     const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
     const soundRef = useRef<Howl | null>(null);
+    const soundPlayedRef = useRef<boolean>(false);
 
     useEffect(() => {
         soundRef.current = new Howl({
             src: [achievementSound],
+            onend: () => {
+                soundPlayedRef.current = false;
+            }
         });
     }, []);
 
     const handleStart = () => {
         setShowButton(false);
         setShowLottie(true);
+        soundPlayedRef.current = false;
         if (lottieRef.current) {
             lottieRef.current.play();
         }
@@ -30,17 +35,17 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
 
     const handleLottieEvent = (event: PlayerEvents) => {
         if (event === PlayerEvents.Play) {
-            // Delay hiding the static image slightly to ensure smooth transition
             setTimeout(() => setShowStatic(false), 50);
         }
         if (event === PlayerEvents.Frame && lottieRef.current) {
             const animationInstance = lottieRef.current.getAnimationInstance();
             if (animationInstance) {
                 const currentFrame = animationInstance.currentFrame;
-                if (currentFrame >= 85) {
+                if (currentFrame >= 85 && !soundPlayedRef.current) {
                     setShowModal(true);
                     if (soundRef.current) {
                         soundRef.current.play();
+                        soundPlayedRef.current = true;
                     }
                 }
             }
@@ -52,6 +57,7 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         setShowLottie(false);
         setShowStatic(true);
         setShowButton(true);
+        soundPlayedRef.current = false;
         if (lottieRef.current) {
             lottieRef.current.stop();
         }
@@ -175,6 +181,12 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 .styled-button.invisible {
                     opacity: 0;
                     pointer-events: none;
+                }
+                .modal-dialog {
+                    width: 300px;
+                }
+                .modal-content {
+                    background-color: transparent;
                 }
                 .card-container {
                     perspective: 1000px;
