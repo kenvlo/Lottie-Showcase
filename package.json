@@ -11,7 +11,7 @@
   },
   "dependencies": {
     "@dotlottie/react-player": "1.6.19",
-    "@lottiefiles/dotlottie-react": "0.8.2",
+    "@lottiefiles/dotlottie-react": "^0.8.2",
     "@types/howler": "2.2.11",
     "bootstrap": "5.3.3",
     "howler": "2.2.4",
