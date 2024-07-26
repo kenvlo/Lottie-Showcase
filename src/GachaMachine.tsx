@@ -162,7 +162,7 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                     border-radius: 10px;
                     backdrop-filter: blur(10px);
                     width: 100%;
-                    max-width: 400px;
+                    width: 600px;
                     margin: 0 auto;
                 }
                 .gacha-container {
