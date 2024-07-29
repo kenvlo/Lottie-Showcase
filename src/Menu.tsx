@@ -1,18 +1,19 @@
 import React from 'react';
 
 interface MenuProps {
-    onFeatureSelect: (feature: string) => void;
+  onFeatureSelect: (feature: string) => void;
 }
 
 const Menu: React.FC<MenuProps> = ({ onFeatureSelect }) => {
-    return (
-        <nav className="menu">
-            <h1>Lottie Showcase Menu</h1>
-            <button className="styled-button" onClick={() => onFeatureSelect('/flip-card')}>Flip Card - Old Lottie Player (Current Choice)</button>
-            <button className="styled-button" onClick={() => onFeatureSelect('/new-flip-card')}>Flip Card - New Lottie Player</button>
-            <button className="styled-button" onClick={() => onFeatureSelect('/gacha-machine')}>Gacha Machine</button>
-            <button className="styled-button" onClick={() => onFeatureSelect('/lottie-export')}>Lottie Export</button>
-            <style>{`
+  return (
+    <nav className="menu">
+      <h1>Lottie Showcase Menu</h1>
+      <button className="styled-button" onClick={() => onFeatureSelect('/flip-card')}>Flip Card - Old Lottie Player (Current Choice)</button>
+      <button className="styled-button" onClick={() => onFeatureSelect('/new-flip-card')}>Flip Card - New Lottie Player</button>
+      <button className="styled-button" onClick={() => onFeatureSelect('/gacha-machine')}>Gacha Machine</button>
+      <button className="styled-button" onClick={() => onFeatureSelect('/balloon-game')}>Balloon Game</button>
+      <button className="styled-button" onClick={() => onFeatureSelect('/lottie-export')}>Lottie Export</button>
+      <style>{`
         .menu {
           display: flex;
           flex-direction: column;
@@ -45,8 +46,8 @@ const Menu: React.FC<MenuProps> = ({ onFeatureSelect }) => {
           background-color: #45a049;
         }
       `}</style>
-        </nav>
-    );
+    </nav>
+  );
 };
 
 export default Menu;

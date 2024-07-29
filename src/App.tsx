@@ -4,6 +4,7 @@ import NewPrizeReveal from './NewPrizeReveal';
 import Menu from './Menu';
 import LottieExport from './LottieExport';
 import GachaMachine from './GachaMachine';
+import BalloonGame from './BalloonGame';
 
 const App: React.FC = () => {
   const [currentFeature, setCurrentFeature] = useState('/');
@@ -28,6 +29,9 @@ const App: React.FC = () => {
       )}
       {currentFeature === '/lottie-export' && (
         <LottieExport onBack={() => handleFeatureChange('/')} />
+      )}
+      {currentFeature === '/balloon-game' && (
+        <BalloonGame onBack={() => handleFeatureChange('/')} />
       )}
       <style>{`
         .App {
