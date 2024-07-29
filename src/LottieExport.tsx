@@ -1,8 +1,11 @@
 import React, { useState } from 'react';
 import lottie from 'lottie-web';
 
+type ExportFormat = 'jpg' | 'png';
+
 const LottieExport: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [lottieData, setLottieData] = useState<any>(null);
+    const [exportFormat, setExportFormat] = useState<ExportFormat>('png');
 
     const handleFileUpload = (event: React.ChangeEvent<HTMLInputElement>) => {
         const file = event.target.files?.[0];
@@ -49,11 +52,19 @@ const LottieExport: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                 canvas.height = lottieData.h;
                 const ctx = canvas.getContext('2d');
                 if (ctx) {
+                    if (exportFormat === 'png') {
+                        // Set the background to transparent for PNG
+                        ctx.clearRect(0, 0, canvas.width, canvas.height);
+                    } else {
+                        // Set white background for JPG
+                        ctx.fillStyle = 'white';
+                        ctx.fillRect(0, 0, canvas.width, canvas.height);
+                    }
                     ctx.drawImage(img, 0, 0);
-                    const jpgDataUrl = canvas.toDataURL('image/jpeg');
+                    const dataUrl = canvas.toDataURL(`image/${exportFormat}`);
                     const link = document.createElement('a');
-                    link.href = jpgDataUrl;
-                    link.download = 'lottie_first_frame.jpg';
+                    link.href = dataUrl;
+                    link.download = `lottie_first_frame.${exportFormat}`;
                     link.click();
                 }
                 document.body.removeChild(container);
@@ -66,6 +77,26 @@ const LottieExport: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         <div className="lottie-export">
             <h2>Lottie First Frame Export</h2>
             <input type="file" accept=".json" onChange={handleFileUpload} />
+            <div className="format-selection">
+                <label>
+                    <input
+                        type="radio"
+                        value="png"
+                        checked={exportFormat === 'png'}
+                        onChange={() => setExportFormat('png')}
+                    />
+                    PNG (Transparent Background)
+                </label>
+                <label>
+                    <input
+                        type="radio"
+                        value="jpg"
+                        checked={exportFormat === 'jpg'}
+                        onChange={() => setExportFormat('jpg')}
+                    />
+                    JPG (White Background)
+                </label>
+            </div>
             <button className="styled-button" onClick={exportLottieFirstFrame}>Export First Frame</button>
             <button className="styled-button" onClick={onBack}>Back to Menu</button>
             <style>{`
@@ -84,6 +115,16 @@ const LottieExport: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
         input[type="file"] {
           margin-bottom: 20px;
+        }
+        .format-selection {
+          display: flex;
+          flex-direction: column;
+          align-items: flex-start;
+          margin-bottom: 20px;
+          color: white;
+        }
+        .format-selection label {
+          margin-bottom: 10px;
         }
       `}</style>
         </div>
