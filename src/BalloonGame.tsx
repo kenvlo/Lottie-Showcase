@@ -1,41 +1,37 @@
 import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import { DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
+import Lottie from 'react-lottie-player'
+import { AnimationItem, AnimationSegment } from 'lottie-web';
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
 import balloonPopSound from './assets/sound/balloon-pop.mp3';
 import achievementSound from './assets/sound/mixkit-achievement-bell-600.mp3';
 import backgroundImage from './assets/images/sky_background.jpg';
-import balloonImage from './assets/first_frame_image/floating_balloon_first_frame.png';
 import { BalloonState, BalloonData, LottieResource } from './types';
 
-// Define a big JSON for managing Lottie resources
+// Constants
+const MAX_BALLOONS = 10;
+const BALLOON_SIZE = 200;
+const COLUMNS = 8;
+const SPAWN_ATTEMPTS = 10;
+
+// Define Lottie resources
+const DEFAULT_SEGMENT: AnimationSegment = [0, 1];
+
 const lottieResources: Record<string, LottieResource> = {
-    deflatedBalloon: {
-        path: './assets/lottie/deflated_balloon.lottie',
-        specificFrames: {
-            start: 0,
-            end: 30
+    explodingPigeon: {
+        path: './assets/lottie/exploding_pigeon.json',
+        segments: {
+            bird: [1, 23],
+            explosion: [24, 34],
+            feathers: [35, 96]
         }
-    },
-    explodedBalloon: {
-        path: './assets/lottie/exploded_balloon.lottie',
-        specificFrames: {
-            start: 0,
-            end: 20
-        }
-    },
-    // Add more Lottie resources as needed
+    }
 };
 
 interface BalloonGameProps {
     onBack: () => void;
 }
-
-const MAX_BALLOONS = 10;
-const BALLOON_SIZE = 200;
-const COLUMNS = 8;
-const SPAWN_ATTEMPTS = 10;
 
 const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     const [gameStarted, setGameStarted] = useState(false);
@@ -81,8 +77,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
 
     const getUniqueId = useCallback(() => {
         balloonIdCounter.current += 1;
-        const uniqueString = `${Date.now()}${balloonIdCounter.current}`;
-        return parseInt(uniqueString, 10);
+        return balloonIdCounter.current;
     }, []);
 
     const spawnBalloon = useCallback((): BalloonData | null => {
@@ -101,7 +96,6 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                 state: BalloonState.Falling,
             };
 
-            // Check for collisions
             const hasCollision = balloonsRef.current.some(balloon =>
                 Math.abs(balloon.x - candidate.x) < BALLOON_SIZE &&
                 Math.abs(balloon.y - candidate.y) < BALLOON_SIZE
@@ -143,8 +137,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
             const updatedBalloons = prevBalloons.map(balloon => {
                 if (balloon.state === BalloonState.Falling) {
                     const newY = balloon.y + balloon.speed;
-                    if (newY > gameHeight) {
-                        // Balloon has hit the ground, change state to Deflated
+                    if (newY > gameHeight - BALLOON_SIZE) {
                         return { ...balloon, state: BalloonState.Deflated, y: gameHeight - BALLOON_SIZE };
                     }
                     return { ...balloon, y: newY };
@@ -152,21 +145,11 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                 return balloon;
             });
 
-            // Remove exploded balloons and replace deflated balloons with new ones
-            const filteredBalloons = updatedBalloons.filter(balloon => balloon.state !== BalloonState.Exploded);
-            const newBalloons = filteredBalloons.map(balloon => {
-                if (balloon.state === BalloonState.Deflated) {
-                    const newBalloon = spawnBalloon();
-                    return newBalloon || balloon;
-                }
-                return balloon;
-            });
-
-            return newBalloons;
+            return updatedBalloons;
         });
 
         animationFrameId.current = requestAnimationFrame(updateBalloonPositions);
-    }, [spawnBalloon]);
+    }, []);
 
     useEffect(() => {
         if (gameStarted) {
@@ -221,6 +204,11 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                         key={balloon.id}
                         data={balloon}
                         onClick={() => handleBalloonClick(balloon.id)}
+                        onAnimationComplete={() => {
+                            setBalloons(prevBalloons =>
+                                prevBalloons.filter(b => b.id !== balloon.id)
+                            );
+                        }}
                     />
                 ))}
             </div>
@@ -307,56 +295,79 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
 interface BalloonProps {
     data: BalloonData;
     onClick: () => void;
+    onAnimationComplete: () => void;
 }
 
-const Balloon: React.FC<BalloonProps> = ({ data, onClick }) => {
-    const [lottieError, setLottieError] = useState(false);
+const Balloon: React.FC<BalloonProps> = ({ data, onClick, onAnimationComplete }) => {
+    const [animationData, setAnimationData] = useState<object | null>(null);
+    const [currentSegment, setCurrentSegment] = useState<AnimationSegment>(
+        lottieResources.explodingPigeon.segments?.bird || DEFAULT_SEGMENT
+    );
+    const lottieRef = useRef<AnimationItem | null>(null);
 
-    const handleLottieEvent = (event: PlayerEvents) => {
-        if (event === PlayerEvents.Error) {
-            console.error("Error loading Lottie animation");
-            setLottieError(true);
+    useEffect(() => {
+        import(lottieResources.explodingPigeon.path).then(setAnimationData);
+    }, []);
+
+    const handleComplete = useCallback(() => {
+        if (data.state === BalloonState.Exploded || data.state === BalloonState.Deflated) {
+            onAnimationComplete();
         }
+    }, [data.state, onAnimationComplete]);
+
+    const getSegment = (segmentName: string): AnimationSegment => {
+        return lottieResources.explodingPigeon.segments?.[segmentName] || DEFAULT_SEGMENT;
     };
 
-    if (data.state === BalloonState.Falling) {
-        return (
-            <img
-                src={balloonImage}
-                alt="Balloon"
-                className="balloon"
-                style={{ left: data.x, top: data.y }}
-                onClick={onClick}
-            />
-        );
-    } else {
-        const lottieResource = data.state === BalloonState.Deflated
-            ? lottieResources.deflatedBalloon
-            : lottieResources.explodedBalloon;
+    useEffect(() => {
+        if (lottieRef.current) {
+            let segment: AnimationSegment;
+            switch (data.state) {
+                case BalloonState.Falling:
+                    segment = getSegment('bird');
+                    break;
+                case BalloonState.Exploded:
+                    segment = getSegment('explosion');
+                    break;
+                case BalloonState.Deflated:
+                    segment = getSegment('feathers');
+                    break;
+                default:
+                    segment = DEFAULT_SEGMENT;
+            }
+            setCurrentSegment(segment);
+            lottieRef.current.playSegments(segment, true);
+        }
+    }, [data.state]);
 
-        return lottieError ? (
-            <img
-                src={balloonImage}
-                alt="Balloon"
-                className="balloon"
-                style={{ left: data.x, top: data.y, opacity: 0.5 }}
-            />
-        ) : (
-            <DotLottiePlayer
-                src={lottieResource.path}
-                autoplay
-                loop={false}
-                onEvent={handleLottieEvent}
-                style={{
-                    position: 'absolute',
-                    left: data.x,
-                    top: data.y,
-                    width: BALLOON_SIZE,
-                    height: BALLOON_SIZE,
-                }}
-            />
-        );
+    if (!animationData) {
+        return <div>Loading...</div>;
     }
+
+    return (
+        <div
+            style={{
+                position: 'absolute',
+                left: data.x,
+                top: data.y,
+                width: '200px',
+                height: '200px',
+                transition: data.state === BalloonState.Falling ? 'none' : 'opacity 1s',
+                opacity: data.state === BalloonState.Falling ? 1 : 0,
+            }}
+            onClick={data.state === BalloonState.Falling ? onClick : undefined}
+        >
+            <Lottie
+                ref={lottieRef}
+                animationData={animationData}
+                play={true}
+                segments={currentSegment}
+                loop={data.state === BalloonState.Falling}
+                onComplete={handleComplete}
+                style={{ width: '100%', height: '100%' }}
+            />
+        </div>
+    );
 };
 
 export default BalloonGame;

@@ -1,3 +1,5 @@
+import { AnimationSegment } from 'lottie-web';
+
 export enum BalloonState {
     Falling,
     Exploded,
@@ -12,10 +14,11 @@ export interface BalloonData {
     state: BalloonState;
 }
 
+export interface LottieSegments {
+    [key: string]: AnimationSegment;
+}
+
 export interface LottieResource {
     path: string;
-    specificFrames: {
-        start: number;
-        end: number;
-    };
+    segments?: LottieSegments;
 }
