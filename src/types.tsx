@@ -19,6 +19,7 @@ export interface LottieSegments {
 }
 
 export interface LottieResource {
-    path: string;
+    // path: string;
+    path: object;
     segments?: LottieSegments;
 }

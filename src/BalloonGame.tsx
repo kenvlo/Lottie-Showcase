@@ -7,6 +7,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import balloonPopSound from './assets/sound/balloon-pop.mp3';
 import achievementSound from './assets/sound/mixkit-achievement-bell-600.mp3';
 import backgroundImage from './assets/images/sky_background.jpg';
+import explodingPigeonLottie from './assets/lottie/exploding_pigeon.json';
 import { BalloonState, BalloonData, LottieResource } from './types';
 
 // Constants
@@ -20,7 +21,8 @@ const DEFAULT_SEGMENT: AnimationSegment = [0, 1];
 
 const lottieResources: Record<string, LottieResource> = {
     explodingPigeon: {
-        path: './assets/lottie/exploding_pigeon.json',
+        // path:  './assets/lottie/exploding_pigeon.json',
+        path: explodingPigeonLottie,
         segments: {
             bird: [1, 23],
             explosion: [24, 34],
@@ -306,7 +308,8 @@ const Balloon: React.FC<BalloonProps> = ({ data, onClick, onAnimationComplete })
     const lottieRef = useRef<AnimationItem | null>(null);
 
     useEffect(() => {
-        import(lottieResources.explodingPigeon.path).then(setAnimationData);
+        // import(lottieResources.explodingPigeon.path).then(setAnimationData);
+        setAnimationData(lottieResources.explodingPigeon.path);
     }, []);
 
     const handleComplete = useCallback(() => {
