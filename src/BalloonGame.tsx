@@ -1,6 +1,6 @@
-import React, { useState, useEffect, useRef, useCallback } from 'react';
+import { useState, useEffect, useRef, useCallback } from 'react';
 import { Button, Modal } from 'react-bootstrap';
-import { DotLottiePlayer, DotLottieCommonPlayer, PlayerEvents } from "@dotlottie/react-player";
+import { DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
 import balloonPopSound from './assets/sound/balloon-pop.mp3';
@@ -33,6 +33,9 @@ interface BalloonGameProps {
 }
 
 const MAX_BALLOONS = 10;
+const BALLOON_SIZE = 200;
+const COLUMNS = 8;
+const SPAWN_ATTEMPTS = 10;
 
 const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     const [gameStarted, setGameStarted] = useState(false);
@@ -44,6 +47,12 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     const popSoundRef = useRef<Howl | null>(null);
     const achievementSoundRef = useRef<Howl | null>(null);
     const animationFrameId = useRef<number | null>(null);
+    const balloonsRef = useRef<BalloonData[]>([]);
+    const balloonIdCounter = useRef(0);
+
+    useEffect(() => {
+        balloonsRef.current = balloons;
+    }, [balloons]);
 
     useEffect(() => {
         popSoundRef.current = new Howl({ src: [balloonPopSound], mute: isMuted });
@@ -70,6 +79,43 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         spawnBalloons();
     };
 
+    const getUniqueId = useCallback(() => {
+        balloonIdCounter.current += 1;
+        const uniqueString = `${Date.now()}${balloonIdCounter.current}`;
+        return parseInt(uniqueString, 10);
+    }, []);
+
+    const spawnBalloon = useCallback((): BalloonData | null => {
+        const gameWidth = gameAreaRef.current?.clientWidth ?? 0;
+        const columnWidth = gameWidth / COLUMNS;
+
+        let attempts = 0;
+        while (attempts < SPAWN_ATTEMPTS) {
+            const column = Math.floor(Math.random() * COLUMNS);
+            const x = column * columnWidth + (columnWidth - BALLOON_SIZE) / 2;
+            const candidate: BalloonData = {
+                id: getUniqueId(),
+                x,
+                y: -BALLOON_SIZE,
+                speed: 1 + Math.random(),
+                state: BalloonState.Falling,
+            };
+
+            // Check for collisions
+            const hasCollision = balloonsRef.current.some(balloon =>
+                Math.abs(balloon.x - candidate.x) < BALLOON_SIZE &&
+                Math.abs(balloon.y - candidate.y) < BALLOON_SIZE
+            );
+
+            if (!hasCollision) {
+                return candidate;
+            }
+
+            attempts++;
+        }
+        return null;
+    }, [getUniqueId]);
+
     const spawnBalloons = useCallback(() => {
         if (!gameStarted) return;
 
@@ -78,19 +124,12 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                 return prevBalloons;
             }
 
-            const newBalloon: BalloonData = {
-                id: Date.now(),
-                x: Math.random() * (gameAreaRef.current?.clientWidth ?? 0),
-                y: -50,
-                speed: 1 + Math.random(),
-                state: BalloonState.Falling,
-            };
-
-            return [...prevBalloons, newBalloon];
+            const newBalloon = spawnBalloon();
+            return newBalloon ? [...prevBalloons, newBalloon] : prevBalloons;
         });
 
         setTimeout(spawnBalloons, 1000 + Math.random() * 2000);
-    }, [gameStarted]);
+    }, [gameStarted, spawnBalloon]);
 
     useEffect(() => {
         if (gameStarted) {
@@ -99,25 +138,43 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     }, [gameStarted, spawnBalloons]);
 
     const updateBalloonPositions = useCallback(() => {
-        setBalloons(prevBalloons =>
-            prevBalloons.filter(balloon => {
+        setBalloons(prevBalloons => {
+            const gameHeight = gameAreaRef.current?.clientHeight ?? 0;
+            const updatedBalloons = prevBalloons.map(balloon => {
                 if (balloon.state === BalloonState.Falling) {
                     const newY = balloon.y + balloon.speed;
-                    if (newY > (gameAreaRef.current?.clientHeight ?? 0)) {
-                        return false; // Remove balloon if it's off-screen
+                    if (newY > gameHeight) {
+                        // Balloon has hit the ground, change state to Deflated
+                        return { ...balloon, state: BalloonState.Deflated, y: gameHeight - BALLOON_SIZE };
                     }
                     return { ...balloon, y: newY };
                 }
-                return balloon.state !== BalloonState.Exploded; // Remove exploded balloons
-            })
-        );
+                return balloon;
+            });
+
+            // Remove exploded balloons and replace deflated balloons with new ones
+            const filteredBalloons = updatedBalloons.filter(balloon => balloon.state !== BalloonState.Exploded);
+            const newBalloons = filteredBalloons.map(balloon => {
+                if (balloon.state === BalloonState.Deflated) {
+                    const newBalloon = spawnBalloon();
+                    return newBalloon || balloon;
+                }
+                return balloon;
+            });
+
+            return newBalloons;
+        });
 
         animationFrameId.current = requestAnimationFrame(updateBalloonPositions);
-    }, []);
+    }, [spawnBalloon]);
 
     useEffect(() => {
         if (gameStarted) {
             animationFrameId.current = requestAnimationFrame(updateBalloonPositions);
+        } else {
+            if (animationFrameId.current) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
         }
 
         return () => {
@@ -188,16 +245,26 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
 
             <style>{`
             .balloon-game {
-              width: 1500px;
-              height: 1000px;
-              position: relative;
-              overflow: hidden;
+                width: 1500px;
+                height: 1000px;
+                position: relative;
+                overflow: hidden;
             }
             .game-area {
-              width: 100%;
-              height: 100%;
-              background-size: cover;
-              background-position: center;
+                width: 100%;
+                height: 100%;
+                background-size: cover;
+                background-position: center;
+            }
+            .balloon {
+                width: ${BALLOON_SIZE}px;
+                height: ${BALLOON_SIZE}px;
+                position: absolute;
+                cursor: pointer;
+                transition: transform 0.1s ease-in-out;
+            }
+            .balloon:hover {
+                transform: scale(1.05);
             }
             .start-button {
               position: absolute;
@@ -230,7 +297,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
               background: none;
               border: none;
               color: white;
-              font-size: 24px;
+              font-size: 15px;
             }
           `}</style>
         </div>
@@ -242,12 +309,13 @@ interface BalloonProps {
     onClick: () => void;
 }
 
-const Balloon: React.FC<BalloonProps> = React.memo(({ data, onClick }) => {
-    const lottieRef = useRef<DotLottieCommonPlayer>(null);
+const Balloon: React.FC<BalloonProps> = ({ data, onClick }) => {
+    const [lottieError, setLottieError] = useState(false);
 
     const handleLottieEvent = (event: PlayerEvents) => {
-        if (event === PlayerEvents.Complete) {
-            // Remove the balloon from the game area
+        if (event === PlayerEvents.Error) {
+            console.error("Error loading Lottie animation");
+            setLottieError(true);
         }
     };
 
@@ -266,9 +334,15 @@ const Balloon: React.FC<BalloonProps> = React.memo(({ data, onClick }) => {
             ? lottieResources.deflatedBalloon
             : lottieResources.explodedBalloon;
 
-        return (
+        return lottieError ? (
+            <img
+                src={balloonImage}
+                alt="Balloon"
+                className="balloon"
+                style={{ left: data.x, top: data.y, opacity: 0.5 }}
+            />
+        ) : (
             <DotLottiePlayer
-                ref={lottieRef}
                 src={lottieResource.path}
                 autoplay
                 loop={false}
@@ -277,12 +351,12 @@ const Balloon: React.FC<BalloonProps> = React.memo(({ data, onClick }) => {
                     position: 'absolute',
                     left: data.x,
                     top: data.y,
-                    width: '50px',
-                    height: '50px',
+                    width: BALLOON_SIZE,
+                    height: BALLOON_SIZE,
                 }}
             />
         );
     }
-});
+};
 
 export default BalloonGame;
