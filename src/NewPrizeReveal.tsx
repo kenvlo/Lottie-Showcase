@@ -16,7 +16,7 @@ const NewPrizeReveal: React.FC<NewPrizeRevealProps> = ({ onBack }) => {
   const [showModal, setShowModal] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
   const [dotLottie, setDotLottie] = useState<DotLottieInstance | null>(null);
 
   const cardRef = useRef<HTMLDivElement>(null);

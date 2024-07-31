@@ -1,9 +1,10 @@
 import React, { useState, useEffect, useRef, useCallback } from "react";
 import { Modal, Button } from "react-bootstrap";
-import { DotLottiePlayer, PlayerEvents, DotLottieCommonPlayer } from "@dotlottie/react-player";
+import Lottie from 'react-lottie-player';
+import { AnimationItem } from 'lottie-web';
 import { Howl } from "howler";
 import { Volume2, VolumeX } from "lucide-react";
-import fireworksAnimation from "./assets/lottie/fireworks.lottie";
+import fireworksAnimation from "./assets/lottie/fireworks.json";
 import achievementSound from "./assets/sound/mixkit-achievement-bell-600.mp3";
 
 interface PrizeRevealProps {
@@ -14,11 +15,11 @@ const PrizeReveal: React.FC<PrizeRevealProps> = ({ onBack }) => {
   const [showModal, setShowModal] = useState(false);
   const [isFlipped, setIsFlipped] = useState(false);
   const [showFireworks, setShowFireworks] = useState(false);
-  const [isMuted, setIsMuted] = useState(true);
+  const [isMuted, setIsMuted] = useState(false);
 
   const cardRef = useRef<HTMLDivElement>(null);
   const soundRef = useRef<Howl | null>(null);
-  const lottieRef = useRef<DotLottieCommonPlayer>(null);
+  const lottieRef = useRef<AnimationItem | null>(null);
 
   useEffect(() => {
     soundRef.current = new Howl({
@@ -52,17 +53,23 @@ const PrizeReveal: React.FC<PrizeRevealProps> = ({ onBack }) => {
     }
   };
 
-  const handleLottieEvent = useCallback(
-    <T extends PlayerEvents>(event: T) => {
-      if (event === PlayerEvents.Play) {
-        setIsFlipped(true);
-        if (!isMuted && soundRef.current) {
-          soundRef.current.play();
-        }
-      }
-    },
-    [isMuted]
-  );
+  const handleCardFlip = useCallback(() => {
+    setIsFlipped(true);
+    setShowFireworks(true);
+    if (!isMuted && soundRef.current) {
+      soundRef.current.play();
+    }
+  }, [isMuted]);
+
+  // Add a delay before flipping the card
+  useEffect(() => {
+    if (showModal) {
+      const timer = setTimeout(() => {
+        handleCardFlip();
+      }, 500); // Adjust this delay as needed
+      return () => clearTimeout(timer);
+    }
+  }, [showModal, handleCardFlip]);
 
   return (
     <div className="container">
@@ -79,7 +86,6 @@ const PrizeReveal: React.FC<PrizeRevealProps> = ({ onBack }) => {
       <Modal
         show={showModal}
         onHide={resetState}
-        onEntering={() => setShowFireworks(true)}
         centered
         backdrop="static"
         keyboard={false}
@@ -107,12 +113,11 @@ const PrizeReveal: React.FC<PrizeRevealProps> = ({ onBack }) => {
 
       {showFireworks && (
         <div id="fireworks-container">
-          <DotLottiePlayer
+          <Lottie
             ref={lottieRef}
-            src={fireworksAnimation}
-            autoplay
+            animationData={fireworksAnimation}
+            play
             loop={false}
-            onEvent={handleLottieEvent}
             style={{
               position: "fixed",
               top: 0,
