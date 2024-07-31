@@ -234,62 +234,62 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
             </Button>
 
             <style>{`
-            .balloon-game {
-              width: 1500px;
-              height: 1000px;
-              position: relative;
-              overflow: hidden;
-            }
-            .game-area {
-              width: 100%;
-              height: 100%;
-              background-size: cover;
-              background-position: center;
-            }
-            .balloon {
-              width: ${BALLOON_SIZE}px;
-              height: ${BALLOON_SIZE}px;
-              position: absolute;
-              cursor: pointer;
-              transition: transform 0.1s ease-in-out;
-            }
-            .balloon:hover {
-              transform: scale(1.05);
-            }
-            .start-button {
-              position: absolute;
-              top: 50%;
-              left: 50%;
-              transform: translate(-50%, -50%);
-            }
-            .score {
-              position: absolute;
-              top: 10px;
-              right: 10px;
-              font-size: 24px;
-              color: white;
-              background-color: rgba(0, 0, 0, 0.5);
-              padding: 5px 10px;
-              border-radius: 5px;
-            }
-            .prize-card {
-              text-align: center;
-            }
-            .back-button {
-              position: absolute;
-              bottom: 10px;
-              left: 10px;
-            }
-            .mute-button {
-              position: absolute;
-              top: 10px;
-              left: 10px;
-              background: none;
-              border: none;
-              color: white;
-              font-size: 15px;
-            }
-          `}</style>
+                .balloon-game {
+                    width: 1500px;
+                    height: 1000px;
+                    position: relative;
+                    overflow: hidden;
+                }
+                .game-area {
+                    width: 100%;
+                    height: 100%;
+                    background-size: cover;
+                    background-position: center;
+                }
+                .balloon {
+                    width: ${BALLOON_SIZE}px;
+                    height: ${BALLOON_SIZE}px;
+                    position: absolute;
+                    cursor: pointer;
+                    transition: transform 0.1s ease-in-out;
+                }
+                .balloon:hover {
+                    transform: scale(1.05);
+                }
+                .start-button {
+                    position: absolute;
+                    top: 50%;
+                    left: 50%;
+                    transform: translate(-50%, -50%);
+                }
+                .score {
+                    position: absolute;
+                    top: 10px;
+                    right: 10px;
+                    font-size: 24px;
+                    color: white;
+                    background-color: rgba(0, 0, 0, 0.5);
+                    padding: 5px 10px;
+                    border-radius: 5px;
+                }
+                .prize-card {
+                    text-align: center;
+                }
+                .back-button {
+                    position: absolute;
+                    bottom: 10px;
+                    left: 10px;
+                }
+                .mute-button {
+                    position: absolute;
+                    top: 10px;
+                    left: 10px;
+                    background: none;
+                    border: none;
+                    color: white;
+                    font-size: 15px;
+                }
+            `}</style>
         </div>
     );
 };
@@ -357,6 +357,7 @@ const Balloon: React.FC<BalloonProps> = ({ data, onClick, onAnimationComplete })
                 height: '200px',
                 transition: data.state === BalloonState.Falling ? 'none' : 'opacity 1s',
                 opacity: data.state === BalloonState.Falling ? 1 : 0,
+                cursor: data.state === BalloonState.Falling ? 'pointer' : 'default',
             }}
             onClick={data.state === BalloonState.Falling ? onClick : undefined}
         >
