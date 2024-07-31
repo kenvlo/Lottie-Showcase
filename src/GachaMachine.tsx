@@ -1,11 +1,12 @@
 import React, { useState, useEffect, useRef, useCallback, useDeferredValue, useTransition } from 'react';
-import { DotLottieCommonPlayer, DotLottiePlayer, PlayerEvents } from "@dotlottie/react-player";
+import Lottie from 'react-lottie-player';
+import { AnimationItem } from 'lottie-web';
 import { Howl } from "howler";
 import { Button, Modal } from "react-bootstrap";
 import { Volume2, VolumeX } from "lucide-react";
 import achievementSound from "./assets/sound/mixkit-achievement-bell-600.mp3";
 import gachaMachineFirstFrame from "./assets/first_frame_image/gacha_machine_first_frame.jpg";
-import gachaMachineLottie from "./assets/lottie/gacha_machine.lottie";
+import gachaMachineLottie from "./assets/lottie/gacha_machine.json";
 
 const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [showStatic, setShowStatic] = useState(true);
@@ -15,12 +16,14 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
     const [isLoading, setIsLoading] = useState(true);
     const [isMuted, setIsMuted] = useState(false);
     const [isLottieReady, setIsLottieReady] = useState(false);
+    const [isVisible, setIsVisible] = useState(false);
     const deferredShowLottie = useDeferredValue(showLottie);
     const [isPending, startTransition] = useTransition();
-    const lottieRef = useRef<DotLottieCommonPlayer | null>(null);
+    const lottieRef = useRef<AnimationItem | null>(null);
     const soundRef = useRef<Howl | null>(null);
     const soundPlayedRef = useRef<boolean>(false);
     const containerRef = useRef<HTMLDivElement>(null);
+    const animationFrameId = useRef<number | null>(null);
 
     useEffect(() => {
         const img = new Image();
@@ -35,10 +38,25 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
             mute: isMuted
         });
 
+        const observer = new IntersectionObserver(
+            ([entry]) => {
+                setIsVisible(entry.isIntersecting);
+            },
+            { threshold: 0.1 }
+        );
+
+        if (containerRef.current) {
+            observer.observe(containerRef.current);
+        }
+
         return () => {
             if (soundRef.current) {
                 soundRef.current.unload();
             }
+            if (animationFrameId.current !== null) {
+                cancelAnimationFrame(animationFrameId.current);
+            }
+            observer.disconnect();
         };
     }, [isMuted]);
 
@@ -48,58 +66,55 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
         }
     }, [isMuted]);
 
-    const getObserver = useCallback(() => {
-        return new IntersectionObserver((entries) => {
-            entries.forEach((entry) => {
-                if (entry.isIntersecting && deferredShowLottie && isLottieReady) {
-                    lottieRef.current?.play();
-                } else {
-                    lottieRef.current?.pause();
+    const checkFrame = useCallback(() => {
+        if (lottieRef.current && isVisible) {
+            const currentFrame = lottieRef.current.currentFrame;
+            if (currentFrame >= 85 && !soundPlayedRef.current) {
+                setShowModal(true);
+                if (soundRef.current && !isMuted) {
+                    soundRef.current.play();
+                    soundPlayedRef.current = true;
                 }
-            });
-        });
-    }, [deferredShowLottie, isLottieReady]);
+                if (animationFrameId.current !== null) {
+                    cancelAnimationFrame(animationFrameId.current);
+                    animationFrameId.current = null;
+                }
+            } else if (deferredShowLottie) {
+                animationFrameId.current = requestAnimationFrame(checkFrame);
+            }
+        }
+    }, [deferredShowLottie, isMuted, isVisible]);
 
     useEffect(() => {
-        const observer = getObserver();
-        if (containerRef.current) {
-            observer.observe(containerRef.current);
+        if (deferredShowLottie && isLottieReady && isVisible) {
+            animationFrameId.current = requestAnimationFrame(checkFrame);
+        } else {
+            if (animationFrameId.current !== null) {
+                cancelAnimationFrame(animationFrameId.current);
+                animationFrameId.current = null;
+            }
         }
 
         return () => {
-            observer.disconnect();
+            if (animationFrameId.current !== null) {
+                cancelAnimationFrame(animationFrameId.current);
+                animationFrameId.current = null;
+            }
         };
-    }, [getObserver]);
+    }, [deferredShowLottie, isLottieReady, isVisible, checkFrame]);
 
     const handleStart = () => {
         setShowButton(false);
         startTransition(() => {
             setShowLottie(true);
+            setShowStatic(false);
         });
         soundPlayedRef.current = false;
     };
 
-    const handleLottieEvent = (event: PlayerEvents) => {
-        if (event === PlayerEvents.Ready) {
-            setIsLottieReady(true);
-        }
-        if (event === PlayerEvents.Play) {
-            setTimeout(() => setShowStatic(false), 50);
-        }
-        if (event === PlayerEvents.Frame && lottieRef.current) {
-            const animationInstance = lottieRef.current.getAnimationInstance();
-            if (animationInstance) {
-                const currentFrame = animationInstance.currentFrame;
-                if (currentFrame >= 85 && !soundPlayedRef.current) {
-                    setShowModal(true);
-                    if (soundRef.current && !isMuted) {
-                        soundRef.current.play();
-                        soundPlayedRef.current = true;
-                    }
-                }
-            }
-        }
-    };
+    const handleLottieLoad = useCallback(() => {
+        setIsLottieReady(true);
+    }, []);
 
     const handleClaim = () => {
         setShowModal(false);
@@ -132,14 +147,14 @@ const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {
                             alt="Gacha Machine"
                             className={`gacha-image ${showStatic ? 'visible' : ''}`}
                         />
-
-                        <DotLottiePlayer
+                        <Lottie
                             ref={lottieRef}
-                            src={gachaMachineLottie}
-                            autoplay={false}
+                            animationData={gachaMachineLottie}
+                            play={deferredShowLottie && isVisible}
                             loop={false}
-                            onEvent={handleLottieEvent}
-                            className={`lottie-player ${deferredShowLottie ? 'visible' : ''}`}
+                            onLoad={handleLottieLoad}
+                            style={{ width: '100%', height: '100%' }}
+                            className={`lottie-player ${showLottie ? 'visible' : ''}`}
                         />
                     </>
                 )}

@@ -235,26 +235,26 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
 
             <style>{`
             .balloon-game {
-                width: 1500px;
-                height: 1000px;
-                position: relative;
-                overflow: hidden;
+              width: 1500px;
+              height: 1000px;
+              position: relative;
+              overflow: hidden;
             }
             .game-area {
-                width: 100%;
-                height: 100%;
-                background-size: cover;
-                background-position: center;
+              width: 100%;
+              height: 100%;
+              background-size: cover;
+              background-position: center;
             }
             .balloon {
-                width: ${BALLOON_SIZE}px;
-                height: ${BALLOON_SIZE}px;
-                position: absolute;
-                cursor: pointer;
-                transition: transform 0.1s ease-in-out;
+              width: ${BALLOON_SIZE}px;
+              height: ${BALLOON_SIZE}px;
+              position: absolute;
+              cursor: pointer;
+              transition: transform 0.1s ease-in-out;
             }
             .balloon:hover {
-                transform: scale(1.05);
+              transform: scale(1.05);
             }
             .start-button {
               position: absolute;
