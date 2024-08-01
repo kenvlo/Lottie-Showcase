@@ -5,7 +5,7 @@ import { Howl } from "howler";
 import { Button, Modal } from "react-bootstrap";
 import { Volume2, VolumeX } from "lucide-react";
 import achievementSound from "./assets/sound/mixkit-achievement-bell-600.mp3";
-import gachaMachineFirstFrame from "./assets/first_frame_image/gacha_machine_first_frame.jpg";
+import gachaMachineFirstFrame from "./assets/frame_image/gacha_machine_first_frame.jpg";
 import gachaMachineLottie from "./assets/lottie/gacha_machine.json";
 
 const GachaMachine: React.FC<{ onBack: () => void }> = ({ onBack }) => {

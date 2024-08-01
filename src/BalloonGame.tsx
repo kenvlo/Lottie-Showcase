@@ -7,6 +7,7 @@ import { Volume2, VolumeX } from "lucide-react";
 import balloonPopSound from './assets/sound/balloon-pop.mp3';
 import achievementSound from './assets/sound/mixkit-achievement-bell-600.mp3';
 import backgroundImage from './assets/images/sky_background.jpg';
+import threeStarsLastFrame from './assets/frame_image/three_stars_last_frame.png';
 import explodingPigeonLottie from './assets/lottie/exploding_pigeon.json';
 import threeStarsLottie from './assets/lottie/three_stars.json';
 import { BalloonState, BalloonData, LottieResource } from './types';
@@ -54,6 +55,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     const balloonIdCounter = useRef(0);
     const [showStars, setShowStars] = useState(false);
     const [playStars, setPlayStars] = useState(false);
+    const [showStaticStars, setShowStaticStars] = useState(false);
     const cardAnimationTimeout = useRef<number | null>(null);
     const starsLottieRef = useRef<AnimationItem | null>(null);
 
@@ -192,6 +194,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         // Reset stars animation states
         setShowStars(false);
         setPlayStars(false);
+        setShowStaticStars(false);
 
         // Set a timeout to show the stars after the card animation
         cardAnimationTimeout.current = setTimeout(() => {
@@ -213,16 +216,12 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         setShowModal(false);
         setShowStars(false);
         setPlayStars(false);
-        if (starsLottieRef.current) {
-            starsLottieRef.current.goToAndStop(0, true);
-        }
+        setShowStaticStars(false);
     };
 
     const handleStarsAnimationComplete = () => {
         setPlayStars(false);
-        if (starsLottieRef.current) {
-            starsLottieRef.current.goToAndStop(starsLottieRef.current.totalFrames - 1, true);
-        }
+        setShowStaticStars(true);
     };
 
     const toggleMute = () => {
@@ -266,13 +265,20 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                             </div>
                         </div>
                         <div className={`stars-container ${showStars ? 'visible' : ''}`}>
-                            <Lottie
-                                ref={starsLottieRef}
-                                animationData={lottieResources.threeStars.path}
-                                play={playStars}
-                                loop={false}
-                                onComplete={handleStarsAnimationComplete}
-                                style={{ width: '100%', height: '100%' }}
+                            <div className={`lottie-stars ${!showStaticStars ? 'visible' : ''}`}>
+                                <Lottie
+                                    ref={starsLottieRef}
+                                    animationData={lottieResources.threeStars.path}
+                                    play={playStars}
+                                    loop={false}
+                                    onComplete={handleStarsAnimationComplete}
+                                    style={{ width: '100%', height: '100%' }}
+                                />
+                            </div>
+                            <img
+                                className={`static-stars ${showStaticStars ? 'visible' : ''}`}
+                                src={threeStarsLastFrame}
+                                alt="Three Stars"
                             />
                         </div>
                     </div>
@@ -405,11 +411,24 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                     height: 100px;
                     pointer-events: none;
                     opacity: 0;
-                    transition: opacity 0.3s ease-in-out;
                     transform: scale(2.5);
                 }
                 .stars-container.visible {
                     opacity: 1;
+                }
+                .lottie-stars, .static-stars {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0;
+                }
+                .lottie-stars.visible, .static-stars.visible {
+                    opacity: 1;
+                }
+                .static-stars {
+                    object-fit: contain;
                 }
                 @keyframes popUp {
                     0% { transform: scale(0.1); }
