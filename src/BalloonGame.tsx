@@ -8,6 +8,7 @@ import balloonPopSound from './assets/sound/balloon-pop.mp3';
 import achievementSound from './assets/sound/mixkit-achievement-bell-600.mp3';
 import backgroundImage from './assets/images/sky_background.jpg';
 import explodingPigeonLottie from './assets/lottie/exploding_pigeon.json';
+import threeStarsLottie from './assets/lottie/three_stars.json';
 import { BalloonState, BalloonData, LottieResource } from './types';
 
 // Constants
@@ -28,6 +29,10 @@ const lottieResources: Record<string, LottieResource> = {
             explosion: [24, 34],
             feathers: [35, 96]
         }
+    },
+    threeStars: {
+        // path: './assets/lottie/three_stars.json',
+        path: threeStarsLottie
     }
 };
 
@@ -47,6 +52,10 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     const animationFrameId = useRef<number | null>(null);
     const balloonsRef = useRef<BalloonData[]>([]);
     const balloonIdCounter = useRef(0);
+    const [showStars, setShowStars] = useState(false);
+    const [playStars, setPlayStars] = useState(false);
+    const cardAnimationTimeout = useRef<number | null>(null);
+    const starsLottieRef = useRef<AnimationItem | null>(null);
 
     useEffect(() => {
         balloonsRef.current = balloons;
@@ -179,10 +188,41 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         setScore(prevScore => prevScore + 1);
         setShowModal(true);
         achievementSoundRef.current?.play();
+
+        // Reset stars animation states
+        setShowStars(false);
+        setPlayStars(false);
+
+        // Set a timeout to show the stars after the card animation
+        cardAnimationTimeout.current = setTimeout(() => {
+            setShowStars(true);
+            setPlayStars(true);
+        }, 500); // 500ms matches the popUp animation duration
     };
+
+    // Clear the timeout when the component unmounts
+    useEffect(() => {
+        return () => {
+            if (cardAnimationTimeout.current !== null) {
+                clearTimeout(cardAnimationTimeout.current);
+            }
+        };
+    }, []);
 
     const handleClaimPrize = () => {
         setShowModal(false);
+        setShowStars(false);
+        setPlayStars(false);
+        if (starsLottieRef.current) {
+            starsLottieRef.current.goToAndStop(0, true);
+        }
+    };
+
+    const handleStarsAnimationComplete = () => {
+        setPlayStars(false);
+        if (starsLottieRef.current) {
+            starsLottieRef.current.goToAndStop(starsLottieRef.current.totalFrames - 1, true);
+        }
     };
 
     const toggleMute = () => {
@@ -224,6 +264,16 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                                 <p>You've popped a balloon and won a prize!</p>
                                 <Button onClick={handleClaimPrize} className="styled-button">Claim Prize</Button>
                             </div>
+                        </div>
+                        <div className={`stars-container ${showStars ? 'visible' : ''}`}>
+                            <Lottie
+                                ref={starsLottieRef}
+                                animationData={lottieResources.threeStars.path}
+                                play={playStars}
+                                loop={false}
+                                onComplete={handleStarsAnimationComplete}
+                                style={{ width: '100%', height: '100%' }}
+                            />
                         </div>
                     </div>
                 </Modal.Body>
@@ -319,6 +369,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                     perspective: 1000px;
                     width: 300px;
                     height: 400px;
+                    position: relative;
                 }
                 .custom-card {
                     width: 100%;
@@ -345,6 +396,20 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                     box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
                     padding: 20px;
                     background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+                }
+                .stars-container {
+                    position: absolute;
+                    top: -50px;
+                    left: 0;
+                    width: 100%;
+                    height: 100px;
+                    pointer-events: none;
+                    opacity: 0;
+                    transition: opacity 0.3s ease-in-out;
+                    transform: scale(2.5);
+                }
+                .stars-container.visible {
+                    opacity: 1;
                 }
                 @keyframes popUp {
                     0% { transform: scale(0.1); }
