@@ -197,7 +197,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                 style={{ backgroundImage: `url(${backgroundImage})` }}
             >
                 {!gameStarted && (
-                    <Button onClick={startGame} className="start-button">
+                    <Button onClick={startGame} className="styled-button start-button">
                         Start Game
                     </Button>
                 )}
@@ -215,21 +215,25 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                 ))}
             </div>
 
-            <Modal show={showModal} onHide={handleClaimPrize} centered>
-                <Modal.Body>
-                    <div className="prize-card">
-                        <h2>Congratulations!</h2>
-                        <p>You've popped a balloon and won a prize!</p>
-                        <Button onClick={handleClaimPrize}>Claim Prize</Button>
+            <Modal show={showModal} onHide={handleClaimPrize} centered keyboard={false}>
+                <Modal.Body className="p-0">
+                    <div className="card-container" onClick={(e) => e.stopPropagation()}>
+                        <div className="custom-card">
+                            <div className="card__face">
+                                <h2>Congratulations!</h2>
+                                <p>You've popped a balloon and won a prize!</p>
+                                <Button onClick={handleClaimPrize} className="styled-button">Claim Prize</Button>
+                            </div>
+                        </div>
                     </div>
                 </Modal.Body>
             </Modal>
 
             <div className="score">Score: {score}</div>
 
-            <Button onClick={onBack} className="back-button">Back to Menu</Button>
+            <Button onClick={onBack} className="styled-button back-button">Back to Menu</Button>
 
-            <Button onClick={toggleMute} className="mute-button">
+            <Button onClick={toggleMute} className="styled-button mute-button">
                 {isMuted ? <VolumeX size={24} /> : <Volume2 size={24} />}
             </Button>
 
@@ -272,8 +276,22 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                     padding: 5px 10px;
                     border-radius: 5px;
                 }
-                .prize-card {
+                .styled-button {
+                    background-color: #4CAF50;
+                    border: none;
+                    color: white;
+                    padding: 15px 32px;
                     text-align: center;
+                    text-decoration: none;
+                    display: inline-block;
+                    font-size: 16px;
+                    margin: 4px 2px;
+                    cursor: pointer;
+                    border-radius: 8px;
+                    transition: background-color 0.3s, opacity 0.3s;
+                }
+                .styled-button:hover {
+                    background-color: #45a049;
                 }
                 .back-button {
                     position: absolute;
@@ -288,6 +306,55 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                     border: none;
                     color: white;
                     font-size: 15px;
+                    padding: 10px;
+                }
+                .modal-dialog {
+                    width: 300px;
+                }
+                .modal-content {
+                    background-color: transparent;
+                    border: none;
+                }
+                .card-container {
+                    perspective: 1000px;
+                    width: 300px;
+                    height: 400px;
+                }
+                .custom-card {
+                    width: 100%;
+                    height: 100%;
+                    position: relative;
+                    transform-style: preserve-3d;
+                    transition: transform 0.6s;
+                    margin: 0;
+                    background-color: transparent;
+                    border: none;
+                    animation: popUp 0.5s ease-out;
+                }
+                .card__face {
+                    position: absolute;
+                    width: 100%;
+                    height: 100%;
+                    backface-visibility: hidden;
+                    display: flex;
+                    flex-direction: column;
+                    justify-content: center;
+                    align-items: center;
+                    text-align: center;
+                    border-radius: 15px;
+                    box-shadow: 0 10px 30px rgba(0, 0, 0, 0.2);
+                    padding: 20px;
+                    background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
+                }
+                @keyframes popUp {
+                    0% { transform: scale(0.1); }
+                    100% { transform: scale(1); }
+                }
+                .modal-backdrop {
+                    background-color: rgba(0, 0, 0, 0.5);
+                }
+                .modal-backdrop.show {
+                    opacity: 1;
                 }
             `}</style>
         </div>
