@@ -21,5 +21,7 @@ export interface LottieSegments {
 export interface LottieResource {
     // path: string;
     path: object;
+    speed?: number;
     segments?: LottieSegments;
+    staticFrame?: string;
 }

@@ -8,8 +8,10 @@ import balloonPopSound from './assets/sound/balloon-pop.mp3';
 import achievementSound from './assets/sound/mixkit-achievement-bell-600.mp3';
 import backgroundImage from './assets/images/sky_background.jpg';
 import threeStarsLastFrame from './assets/frame_image/three_stars_last_frame.png';
+import droppingCoinsLastFrame from './assets/frame_image/dropping_coins_last_frame.png';
 import explodingPigeonLottie from './assets/lottie/exploding_pigeon.json';
 import threeStarsLottie from './assets/lottie/three_stars.json';
+import droppingCoinsLottie from './assets/lottie/dropping_coins.json';
 import { BalloonState, BalloonData, LottieResource } from './types';
 
 // Constants
@@ -33,7 +35,17 @@ const lottieResources: Record<string, LottieResource> = {
     },
     threeStars: {
         // path: './assets/lottie/three_stars.json',
-        path: threeStarsLottie
+        path: threeStarsLottie,
+        staticFrame: threeStarsLastFrame
+    },
+    droppingCoins: {
+        // path: './assets/lottie/dropping_coins.json'
+        path: droppingCoinsLottie,
+        speed: 2,
+        segments: {
+            droppingCoins: [79, 115]
+        },
+        staticFrame: droppingCoinsLastFrame
     }
 };
 
@@ -58,6 +70,14 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
     const [showStaticStars, setShowStaticStars] = useState(false);
     const cardAnimationTimeout = useRef<number | null>(null);
     const starsLottieRef = useRef<AnimationItem | null>(null);
+    const [showCoins, setShowCoins] = useState(false);
+    const [playCoins, setPlayCoins] = useState(false);
+    const [showStaticCoins, setShowStaticCoins] = useState(false);
+    const coinsLottieRef = useRef<AnimationItem | null>(null);
+    const coinAnimationFrameId = useRef<number | null>(null);
+    const [coinReward, setCoinReward] = useState(0);
+    const [coinCount, setCoinCount] = useState(0);
+    const coinAnimationStartTimeRef = useRef<number | null>(null);
 
     useEffect(() => {
         balloonsRef.current = balloons;
@@ -191,15 +211,27 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         setShowModal(true);
         achievementSoundRef.current?.play();
 
-        // Reset stars animation states
+        // Generate random coin reward
+        const newCoinReward = generateRandomCoinReward();
+        setCoinReward(newCoinReward);
+
+        // Reset states
         setShowStars(false);
         setPlayStars(false);
         setShowStaticStars(false);
+        setShowCoins(false);
+        setPlayCoins(false);
+        setShowStaticCoins(false);
+        setCoinCount(0);
 
-        // Set a timeout to show the stars after the card animation
+        setShowModal(true);
+
+        // Set a timeout to show the animations after the card animation
         cardAnimationTimeout.current = setTimeout(() => {
             setShowStars(true);
             setPlayStars(true);
+            setShowCoins(true);
+            setPlayCoins(true);
         }, 500); // 500ms matches the popUp animation duration
     };
 
@@ -212,16 +244,71 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         };
     }, []);
 
+    const generateRandomCoinReward = useCallback(() => {
+        return Math.floor(Math.random() * (2000 - 100 + 1)) + 100;
+    }, []);
+
+    const animateCoinCounter = useCallback(() => {
+        const { droppingCoins } = lottieResources.droppingCoins.segments!;
+        const [startFrame, endFrame] = droppingCoins;
+        const totalFrames = endFrame - startFrame;
+        const animationDuration = (totalFrames / 60) * 1000; // Assuming 60fps, convert to milliseconds
+
+        const updateCoinCounter = (timestamp: number) => {
+            if (!coinAnimationStartTimeRef.current) {
+                coinAnimationStartTimeRef.current = timestamp;
+            }
+            const elapsed = timestamp - coinAnimationStartTimeRef.current;
+            const progress = Math.min(elapsed / animationDuration, 1);
+            const newCoinCount = Math.floor(progress * coinReward);
+            setCoinCount(newCoinCount);
+
+            if (progress < 1) {
+                coinAnimationFrameId.current = requestAnimationFrame(updateCoinCounter);
+            } else {
+                setCoinCount(coinReward);
+                handleCoinsAnimationComplete();
+            }
+        };
+
+        // Ensure we start from 0 on the first frame
+        setCoinCount(0);
+        coinAnimationFrameId.current = requestAnimationFrame(updateCoinCounter);
+    }, [coinReward, setCoinCount]);
+
+    useEffect(() => {
+        if (showModal && playCoins) {
+            // Reset the animation start time
+            coinAnimationStartTimeRef.current = null;
+            // Start the animation
+            animateCoinCounter();
+        }
+    }, [showModal, playCoins, animateCoinCounter]);
+
     const handleClaimPrize = () => {
         setShowModal(false);
         setShowStars(false);
         setPlayStars(false);
         setShowStaticStars(false);
+        setShowCoins(false);
+        setPlayCoins(false);
+        setShowStaticCoins(false);
+        if (coinAnimationFrameId.current) {
+            cancelAnimationFrame(coinAnimationFrameId.current);
+        }
     };
 
     const handleStarsAnimationComplete = () => {
         setPlayStars(false);
         setShowStaticStars(true);
+    };
+
+    const handleCoinsAnimationComplete = () => {
+        setPlayCoins(false);
+        setShowStaticCoins(true);
+        if (coinAnimationFrameId.current) {
+            cancelAnimationFrame(coinAnimationFrameId.current);
+        }
     };
 
     const toggleMute = () => {
@@ -261,7 +348,29 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                             <div className="card__face">
                                 <h2>Congratulations!</h2>
                                 <p>You've popped a balloon and won a prize!</p>
-                                <Button onClick={handleClaimPrize} className="styled-button">Claim Prize</Button>
+                                <div className="prize-container">
+                                    <div className={`coins-container ${showCoins ? 'visible' : ''}`}>
+                                        <div className={`lottie-coins ${!showStaticCoins ? 'visible' : ''}`}>
+                                            <Lottie
+                                                ref={coinsLottieRef}
+                                                animationData={lottieResources.droppingCoins.path}
+                                                play={playCoins}
+                                                loop={false}
+                                                segments={lottieResources.droppingCoins.segments?.droppingCoins}
+                                                speed={lottieResources.droppingCoins.speed}
+                                                onComplete={handleCoinsAnimationComplete}
+                                                style={{ width: '100%', height: '100%' }}
+                                            />
+                                        </div>
+                                        <img
+                                            className={`static-coins ${showStaticCoins ? 'visible' : ''}`}
+                                            src={lottieResources.droppingCoins.staticFrame}
+                                            alt="Dropping Coins"
+                                        />
+                                    </div>
+                                    <div className="coin-counter">+{coinCount}</div>
+                                </div>
+                                <Button onClick={handleClaimPrize} className="styled-button claim-prize-btn">Claim Prize</Button>
                             </div>
                         </div>
                         <div className={`stars-container ${showStars ? 'visible' : ''}`}>
@@ -277,7 +386,7 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                             </div>
                             <img
                                 className={`static-stars ${showStaticStars ? 'visible' : ''}`}
-                                src={threeStarsLastFrame}
+                                src={lottieResources.threeStars.staticFrame}
                                 alt="Three Stars"
                             />
                         </div>
@@ -403,6 +512,9 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                     padding: 20px;
                     background: linear-gradient(120deg, #84fab0 0%, #8fd3f4 100%);
                 }
+                .claim-prize-btn {
+                    z-index: 2;
+                }
                 .stars-container {
                     position: absolute;
                     top: -50px;
@@ -439,6 +551,46 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
                 }
                 .modal-backdrop.show {
                     opacity: 1;
+                }
+                .prize-container {
+                    display: flex;
+                    align-items: center;
+                    justify-content: center;
+                    margin-bottom: 20px;
+                }
+                .coins-container {
+                    width: 100px;
+                    height: 100px;
+                    position: relative;
+                    opacity: 0;
+                    transition: opacity 0.3s ease-in-out;
+                    transform: scale(3);
+                    z-index: 1;
+                }
+                .coins-container.visible {
+                    opacity: 1;
+                }
+                .lottie-coins, .static-coins {
+                    position: absolute;
+                    top: 0;
+                    left: 0;
+                    width: 100%;
+                    height: 100%;
+                    opacity: 0;
+                    transition: opacity 0.3s ease-in-out;
+                }
+                .lottie-coins.visible, .static-coins.visible {
+                    opacity: 1;
+                }
+                .static-coins {
+                    object-fit: contain;
+                }
+                .coin-counter {
+                    font-size: 24px;
+                    font-weight: bold;
+                    margin-left: 20px;
+                    color: #FFD700;
+                    text-shadow: 1px 1px 2px rgba(0,0,0,0.5);
                 }
             `}</style>
         </div>
