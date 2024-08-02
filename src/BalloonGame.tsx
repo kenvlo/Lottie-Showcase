@@ -254,6 +254,14 @@ const BalloonGame: React.FC<BalloonGameProps> = ({ onBack }) => {
         const totalFrames = endFrame - startFrame;
         const animationDuration = (totalFrames / 60) * 1000; // Assuming 60fps, convert to milliseconds
 
+        // So, while the animationDuration calculation doesn't explicitly account for the speed:
+        // animationDuration = (totalFrames / 60) * 1000; // Assuming 60fps, convert to milliseconds
+        // It doesn't actually matter because:
+
+        // The visual animation runs at 2x speed due to the Lottie component settings.
+        // The coin counter animation is synchronized with the visual animation through requestAnimationFrame.
+        // Both animations complete at the same time due to the onComplete handler.
+
         const updateCoinCounter = (timestamp: number) => {
             if (!coinAnimationStartTimeRef.current) {
                 coinAnimationStartTimeRef.current = timestamp;
